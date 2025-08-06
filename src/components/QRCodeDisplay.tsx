@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { QrCode, Copy, Download } from 'lucide-react';
+import { QrCode, Copy, Download, Printer } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface QRCodeDisplayProps {
@@ -45,6 +45,90 @@ export const QRCodeDisplay = ({ qrCode, productName }: QRCodeDisplayProps) => {
     });
   };
 
+  const printQRCode = () => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>QR Code - ${productName}</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              text-align: center;
+              padding: 20px;
+              margin: 0;
+            }
+            .container {
+              max-width: 400px;
+              margin: 0 auto;
+            }
+            .product-name {
+              font-size: 24px;
+              font-weight: bold;
+              margin-bottom: 10px;
+              color: #333;
+            }
+            .qr-code {
+              margin: 20px 0;
+              border: 1px solid #ddd;
+              border-radius: 8px;
+              padding: 10px;
+              background: white;
+            }
+            .qr-code img {
+              max-width: 100%;
+              height: auto;
+            }
+            .qr-text {
+              font-family: monospace;
+              font-size: 14px;
+              background: #f5f5f5;
+              padding: 10px;
+              border-radius: 4px;
+              margin-top: 10px;
+              word-break: break-all;
+            }
+            @media print {
+              body { 
+                margin: 0; 
+                padding: 10px;
+              }
+              .container {
+                max-width: 100%;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="product-name">${productName}</div>
+            <div class="qr-code">
+              <img src="${qrCodeImageUrl}" alt="QR Code" />
+            </div>
+            <div class="qr-text">${qrCode}</div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+              window.onafterprint = function() {
+                window.close();
+              };
+            };
+          </script>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+    
+    toast({
+      title: "Imprimindo QR Code",
+      description: "A janela de impressão foi aberta",
+    });
+  };
+
   if (!qrCode) return null;
 
   return (
@@ -82,14 +166,18 @@ export const QRCodeDisplay = ({ qrCode, productName }: QRCodeDisplayProps) => {
             </div>
             
             {/* Action Buttons */}
-            <div className="flex gap-2">
-              <Button onClick={copyToClipboard} variant="outline" className="flex-1">
-                <Copy className="h-4 w-4 mr-2" />
-                Copiar Código
+            <div className="grid grid-cols-3 gap-2">
+              <Button onClick={copyToClipboard} variant="outline" size="sm">
+                <Copy className="h-4 w-4 mr-1" />
+                Copiar
               </Button>
-              <Button onClick={downloadQRCode} variant="outline" className="flex-1">
-                <Download className="h-4 w-4 mr-2" />
-                Baixar QR
+              <Button onClick={downloadQRCode} variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-1" />
+                Baixar
+              </Button>
+              <Button onClick={printQRCode} variant="outline" size="sm">
+                <Printer className="h-4 w-4 mr-1" />
+                Imprimir
               </Button>
             </div>
             
