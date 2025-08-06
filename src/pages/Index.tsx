@@ -189,7 +189,7 @@ const Index = () => {
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !categoryFilter || product.category === categoryFilter;
+    const matchesCategory = !categoryFilter || categoryFilter === 'all' || product.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
 
@@ -229,7 +229,7 @@ const Index = () => {
                 <SelectValue placeholder="Todas as categorias" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas as categorias</SelectItem>
+                <SelectItem value="all">Todas as categorias</SelectItem>
                 {categories.map(category => (
                   <SelectItem key={category} value={category}>
                     {category}
