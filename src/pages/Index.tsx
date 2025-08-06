@@ -8,6 +8,7 @@ import { ProductForm } from '@/components/ProductForm';
 import { QRScanner } from '@/components/QRScanner';
 import { StockStats } from '@/components/StockStats';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -18,79 +19,154 @@ const Index = () => {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [scannedQRData, setScannedQRData] = useState<string>('');
 
-  // Load products from localStorage on component mount
+  // Load products from Supabase on component mount
   useEffect(() => {
-    const savedProducts = localStorage.getItem('stock-products');
-    if (savedProducts) {
-      setProducts(JSON.parse(savedProducts));
-    } else {
-      // Add some demo data
-      const demoProducts: Product[] = [
-        {
-          id: '1',
-          name: 'Mesa Redonda 1.5m',
-          category: 'Mobiliário',
-          quantity: 15,
-          minStock: 5,
-          description: 'Mesa redonda para 8 pessoas',
-          qrCode: 'MESA-001'
-        },
-        {
-          id: '2',
-          name: 'Refletor LED 50W',
-          category: 'Iluminação',
-          quantity: 3,
-          minStock: 5,
-          description: 'Refletor LED branco quente',
-          qrCode: 'LED-001'
-        },
-        {
-          id: '3',
-          name: 'Caixa de Som Ativa',
-          category: 'Som e Áudio',
-          quantity: 8,
-          minStock: 3,
-          description: 'Caixa ativa 500W RMS',
-          qrCode: 'SOM-001'
-        }
-      ];
-      setProducts(demoProducts);
-      localStorage.setItem('stock-products', JSON.stringify(demoProducts));
-    }
+    loadProducts();
   }, []);
 
-  // Save products to localStorage whenever products change
-  useEffect(() => {
-    localStorage.setItem('stock-products', JSON.stringify(products));
-  }, [products]);
+  const loadProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-  const handleSaveProduct = (productData: Omit<Product, 'id'>) => {
-    if (editingProduct) {
-      // Update existing product
-      setProducts(prev => prev.map(p => 
-        p.id === editingProduct.id 
-          ? { ...productData, id: editingProduct.id }
-          : p
-      ));
-    } else {
-      // Add new product
-      const newProduct: Product = {
-        ...productData,
-        id: Date.now().toString()
-      };
-      setProducts(prev => [...prev, newProduct]);
+      if (error) {
+        console.error('Error loading products:', error);
+        toast({
+          title: "Erro ao carregar produtos",
+          description: "Não foi possível carregar os produtos do banco de dados",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const formattedProducts: Product[] = data.map(product => ({
+        id: product.id,
+        name: product.name,
+        category: product.category,
+        quantity: product.quantity,
+        minStock: product.min_stock,
+        description: product.description,
+        qrCode: product.qr_code
+      }));
+
+      setProducts(formattedProducts);
+    } catch (error) {
+      console.error('Error loading products:', error);
+      toast({
+        title: "Erro ao carregar produtos",
+        description: "Não foi possível carregar os produtos",
+        variant: "destructive",
+      });
     }
-    
-    setEditingProduct(undefined);
-    setScannedQRData('');
   };
 
-  const handleDeleteProduct = (id: string) => {
-    setProducts(prev => prev.filter(p => p.id !== id));
-    toast({
-      title: "Produto removido",
-      description: "O produto foi removido do estoque",
-    });
+  const handleSaveProduct = async (productData: Omit<Product, 'id'>) => {
+    try {
+      if (editingProduct) {
+        // Update existing product
+        const { error } = await supabase
+          .from('products')
+          .update({
+            name: productData.name,
+            category: productData.category,
+            quantity: productData.quantity,
+            min_stock: productData.minStock,
+            description: productData.description,
+            qr_code: productData.qrCode
+          })
+          .eq('id', editingProduct.id);
+
+        if (error) {
+          console.error('Error updating product:', error);
+          toast({
+            title: "Erro ao atualizar produto",
+            description: "Não foi possível atualizar o produto",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        toast({
+          title: "Produto atualizado",
+          description: "O produto foi atualizado com sucesso",
+        });
+      } else {
+        // Add new product
+        const { error } = await supabase
+          .from('products')
+          .insert({
+            name: productData.name,
+            category: productData.category,
+            quantity: productData.quantity,
+            min_stock: productData.minStock,
+            description: productData.description,
+            qr_code: productData.qrCode
+          });
+
+        if (error) {
+          console.error('Error creating product:', error);
+          toast({
+            title: "Erro ao criar produto",
+            description: "Não foi possível criar o produto",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        toast({
+          title: "Produto criado",
+          description: "O produto foi criado com sucesso",
+        });
+      }
+
+      // Reload products from database
+      await loadProducts();
+      setEditingProduct(undefined);
+      setScannedQRData('');
+    } catch (error) {
+      console.error('Error saving product:', error);
+      toast({
+        title: "Erro ao salvar produto",
+        description: "Não foi possível salvar o produto",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting product:', error);
+        toast({
+          title: "Erro ao remover produto",
+          description: "Não foi possível remover o produto",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Produto removido",
+        description: "O produto foi removido do estoque",
+      });
+
+      // Reload products from database
+      await loadProducts();
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: "Erro ao remover produto",
+        description: "Não foi possível remover o produto",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleEditProduct = (product: Product) => {
