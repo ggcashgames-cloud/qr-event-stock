@@ -76,12 +76,20 @@ export const ProductForm = ({ isOpen, onClose, onSave, product, initialQRData }:
       return;
     }
 
-    onSave(formData);
+    let finalFormData = { ...formData };
+    
+    // Generate QR code automatically if not provided and it's a new product
+    if (!product && !formData.qrCode.trim()) {
+      const uniqueId = `PROD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      finalFormData.qrCode = uniqueId;
+    }
+
+    onSave(finalFormData);
     onClose();
     
     toast({
       title: "Sucesso!",
-      description: product ? "Produto atualizado" : "Produto adicionado",
+      description: product ? "Produto atualizado" : "Produto adicionado com QR code gerado automaticamente",
     });
   };
 
@@ -154,9 +162,14 @@ export const ProductForm = ({ isOpen, onClose, onSave, product, initialQRData }:
               id="qrCode"
               value={formData.qrCode}
               onChange={(e) => setFormData(prev => ({ ...prev, qrCode: e.target.value }))}
-              placeholder="Escaneie ou digite o código"
+              placeholder={product || initialQRData ? "Código QR do produto" : "Será gerado automaticamente se vazio"}
               readOnly={!!initialQRData}
             />
+            {!product && !initialQRData && (
+              <p className="text-xs text-muted-foreground">
+                💡 Um código QR único será gerado automaticamente para novos produtos
+              </p>
+            )}
           </div>
 
           <div>

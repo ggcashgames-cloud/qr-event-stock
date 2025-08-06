@@ -1,7 +1,8 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2, Package } from 'lucide-react';
+import { QRCodeDisplay } from './QRCodeDisplay';
 
 export interface Product {
   id: string;
@@ -74,7 +75,44 @@ export const ProductCard = ({ product, onEdit, onDelete }: ProductCardProps) => 
             ⚠️ Estoque baixo!
           </div>
         )}
+        
+        {product.qrCode && (
+          <div className="text-xs text-muted-foreground">
+            QR Code: {product.qrCode.substring(0, 20)}{product.qrCode.length > 20 ? '...' : ''}
+          </div>
+        )}
       </CardContent>
+      
+      <CardFooter className="pt-3">
+        <div className="space-y-2 w-full">
+          {/* QR Code Display */}
+          {product.qrCode && (
+            <QRCodeDisplay qrCode={product.qrCode} productName={product.name} />
+          )}
+          
+          {/* Action Buttons */}
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(product)}
+              className="flex-1"
+            >
+              <Edit className="h-4 w-4 mr-1" />
+              Editar
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onDelete(product.id)}
+              className="text-destructive hover:text-destructive flex-1"
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Remover
+            </Button>
+          </div>
+        </div>
+      </CardFooter>
     </Card>
   );
 };
