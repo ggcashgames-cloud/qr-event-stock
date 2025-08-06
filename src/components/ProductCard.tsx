@@ -11,6 +11,8 @@ export interface Product {
   minStock: number;
   description?: string;
   qrCode?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface ProductCardProps {
