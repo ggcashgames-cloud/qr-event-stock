@@ -33,7 +33,8 @@ export const ProductForm = ({ isOpen, onClose, onSave, product, initialQRData }:
     quantity: 0,
     minStock: 1,
     description: '',
-    qrCode: ''
+    qrCode: '',
+    price: 0
   });
 
   useEffect(() => {
@@ -44,7 +45,8 @@ export const ProductForm = ({ isOpen, onClose, onSave, product, initialQRData }:
         quantity: product.quantity,
         minStock: product.minStock,
         description: product.description || '',
-        qrCode: product.qrCode || ''
+        qrCode: product.qrCode || '',
+        price: product.price || 0
       });
     } else if (initialQRData) {
       setFormData(prev => ({
@@ -59,7 +61,8 @@ export const ProductForm = ({ isOpen, onClose, onSave, product, initialQRData }:
         quantity: 0,
         minStock: 1,
         description: '',
-        qrCode: ''
+        qrCode: '',
+        price: 0
       });
     }
   }, [product, initialQRData, isOpen]);
@@ -170,6 +173,19 @@ export const ProductForm = ({ isOpen, onClose, onSave, product, initialQRData }:
                 💡 Um código QR único será gerado automaticamente para novos produtos
               </p>
             )}
+          </div>
+
+          <div>
+            <Label htmlFor="price">Preço (R$)</Label>
+            <Input
+              id="price"
+              type="number"
+              min="0"
+              step="0.01"
+              value={formData.price}
+              onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+              placeholder="0.00"
+            />
           </div>
 
           <div>

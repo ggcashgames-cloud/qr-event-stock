@@ -12,6 +12,7 @@ export interface Product {
   minStock: number;
   description?: string;
   qrCode?: string;
+  price?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -66,9 +67,11 @@ export const ProductCard = ({ product, onEdit, onDelete }: ProductCardProps) => 
           <p className="text-sm text-muted-foreground">{product.description}</p>
         )}
         
-        <div className="text-xs text-muted-foreground">
-          Estoque mínimo: {product.minStock}
-        </div>
+        {product.price && product.price > 0 && (
+          <div className="text-xs text-muted-foreground">
+            Preço: R$ {product.price.toFixed(2)}
+          </div>
+        )}
         
         {isLowStock && (
           <div className="text-xs text-destructive font-medium">

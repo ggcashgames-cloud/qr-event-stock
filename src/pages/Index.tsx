@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { QrCode, Plus, Search, Filter, Calendar, Send, Package } from 'lucide-react';
+import { QrCode, Plus, Search, Filter, Calendar, Send, Package, RotateCcw, Users, LogOut } from 'lucide-react';
 import { ProductCard, Product } from '@/components/ProductCard';
 import { ProductForm } from '@/components/ProductForm';
 import { QRScanner } from '@/components/QRScanner';
@@ -12,10 +13,14 @@ import { EventForm, Event } from '@/components/EventForm';
 import { EventCard } from '@/components/EventCard';
 import { SendMaterialScanner } from '@/components/SendMaterialScanner';
 import { EventProducts } from '@/components/EventProducts';
+import ReturnMaterial from '@/components/ReturnMaterial';
+import UserApproval from '@/components/UserApproval';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 const Index = () => {
+  const { user, profile, loading, signOut, isAdmin, isFinancialAdmin, isApproved } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -30,12 +35,40 @@ const Index = () => {
   const [isEventProductsOpen, setIsEventProductsOpen] = useState(false);
   const [eventProductCounts, setEventProductCounts] = useState<Record<string, number>>({});
 
+  // Redirect to auth if not logged in or not approved
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  if (!isApproved) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4 p-8">
+          <h1 className="text-2xl font-bold">Aguardando Aprovação</h1>
+          <p className="text-muted-foreground">
+            Sua conta foi criada com sucesso e está aguardando aprovação de um administrador.
+          </p>
+          <Button onClick={signOut} variant="outline">
+            <LogOut className="h-4 w-4 mr-2" />
+            Sair
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   // Load data from Supabase on component mount
   useEffect(() => {
-    loadProducts();
-    loadEvents();
-    loadEventProductCounts();
-  }, []);
+    if (isApproved) {
+      loadProducts();
+      loadEvents();
+      loadEventProductCounts();
+    }
+  }, [isApproved]);
 
   const loadProducts = async () => {
     try {
@@ -59,9 +92,10 @@ const Index = () => {
         name: product.name,
         category: product.category,
         quantity: product.quantity,
-        minStock: product.min_stock,
+        minStock: 0, // Removed min_stock functionality
         description: product.description,
-        qrCode: product.qr_code
+        qrCode: product.qr_code,
+        price: product.price || 0
       }));
 
       setProducts(formattedProducts);
@@ -140,7 +174,7 @@ const Index = () => {
             name: productData.name,
             category: productData.category,
             quantity: productData.quantity,
-            min_stock: productData.minStock,
+            price: productData.price || 0,
             description: productData.description,
             qr_code: productData.qrCode
           })
@@ -168,7 +202,7 @@ const Index = () => {
             name: productData.name,
             category: productData.category,
             quantity: productData.quantity,
-            min_stock: productData.minStock,
+            price: productData.price || 0,
             description: productData.description,
             qr_code: productData.qrCode
           });
@@ -440,18 +474,31 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent">
-            Sistema de Controle de Estoque
-          </h1>
-          <p className="text-muted-foreground">
-            Gerencie seu estoque de equipamentos para eventos
-          </p>
+        <div className="mb-8 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent">
+                VISION EVENTOS
+              </h1>
+              <p className="text-muted-foreground">
+                Gerenciamento de Material (Desenvolvido por ALLMASTER)
+              </p>
+              {profile && (
+                <p className="text-sm text-muted-foreground">
+                  Olá, {profile.name || profile.email} • {profile.role === 'admin' ? 'Administrador' : profile.role === 'financial_admin' ? 'Admin Financeiro' : 'Usuário'}
+                </p>
+              )}
+            </div>
+          </div>
+          <Button onClick={signOut} variant="outline">
+            <LogOut className="h-4 w-4 mr-2" />
+            Sair
+          </Button>
         </div>
 
         {/* Tabs */}
         <Tabs defaultValue="estoque" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-6' : 'grid-cols-4'}`}>
             <TabsTrigger value="estoque" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
               Estoque
@@ -460,10 +507,26 @@ const Index = () => {
               <Send className="h-4 w-4" />
               Enviar Material
             </TabsTrigger>
+            <TabsTrigger value="retornar" className="flex items-center gap-2">
+              <RotateCcw className="h-4 w-4" />
+              Retornar Material
+            </TabsTrigger>
             <TabsTrigger value="eventos" className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               Eventos
             </TabsTrigger>
+            {isAdmin && (
+              <>
+                <TabsTrigger value="aprovacoes" className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Aprovações
+                </TabsTrigger>
+                <TabsTrigger value="financeiro" className="flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Financeiro
+                </TabsTrigger>
+              </>
+            )}
           </TabsList>
 
           {/* Estoque Tab */}
@@ -504,10 +567,12 @@ const Index = () => {
                   <QrCode className="h-4 w-4 mr-2" />
                   Escanear QR
                 </Button>
-                <Button onClick={openNewProductForm} className="flex-1 sm:flex-none">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Adicionar
-                </Button>
+                {(isAdmin || isFinancialAdmin) && (
+                  <Button onClick={openNewProductForm} className="flex-1 sm:flex-none">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -517,10 +582,12 @@ const Index = () => {
                 <p className="text-muted-foreground mb-4">
                   {searchTerm || categoryFilter ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado'}
                 </p>
-                <Button onClick={openNewProductForm}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Adicionar Primeiro Produto
-                </Button>
+                {(isAdmin || isFinancialAdmin) && (
+                  <Button onClick={openNewProductForm}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar Primeiro Produto
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -543,6 +610,11 @@ const Index = () => {
               events={events}
               onSendToEvent={handleSendToEvent}
             />
+          </TabsContent>
+
+          {/* Retornar Material Tab */}
+          <TabsContent value="retornar" className="space-y-6">
+            <ReturnMaterial />
           </TabsContent>
 
           {/* Eventos Tab */}
@@ -582,6 +654,26 @@ const Index = () => {
               </div>
             )}
           </TabsContent>
+
+          {/* Aprovações Tab - Only for admins */}
+          {isAdmin && (
+            <TabsContent value="aprovacoes" className="space-y-6">
+              <UserApproval />
+            </TabsContent>
+          )}
+
+          {/* Financeiro Tab - Only for admins and financial admins */}
+          {(isAdmin || isFinancialAdmin) && (
+            <TabsContent value="financeiro" className="space-y-6">
+              <div className="text-center py-12">
+                <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Módulo Financeiro</h3>
+                <p className="text-muted-foreground">
+                  Funcionalidades financeiras serão implementadas em breve
+                </p>
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
 
         {/* Forms and Modals */}

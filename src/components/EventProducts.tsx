@@ -65,8 +65,9 @@ export const EventProducts = ({ event, isOpen, onClose }: EventProductsProps) =>
         ...ep,
         product: {
           ...ep.product,
-          minStock: ep.product.min_stock,
-          qrCode: ep.product.qr_code
+          minStock: 0, // Removed min_stock functionality
+          qrCode: ep.product.qr_code,
+          price: ep.product.price || 0
         }
       })) || [];
 
