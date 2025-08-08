@@ -35,6 +35,15 @@ const Index = () => {
   const [isEventProductsOpen, setIsEventProductsOpen] = useState(false);
   const [eventProductCounts, setEventProductCounts] = useState<Record<string, number>>({});
 
+  // Load data from Supabase on component mount
+  useEffect(() => {
+    if (isApproved) {
+      loadProducts();
+      loadEvents();
+      loadEventProductCounts();
+    }
+  }, [isApproved]);
+
   // Redirect to auth if not logged in or not approved
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
@@ -60,15 +69,6 @@ const Index = () => {
       </div>
     );
   }
-
-  // Load data from Supabase on component mount
-  useEffect(() => {
-    if (isApproved) {
-      loadProducts();
-      loadEvents();
-      loadEventProductCounts();
-    }
-  }, [isApproved]);
 
   const loadProducts = async () => {
     try {
