@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Camera, CameraOff } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { BrowserQRCodeReader } from '@zxing/browser';
 
 interface QRScannerProps {
   onScanSuccess: (data: string) => void;
@@ -14,42 +15,82 @@ export const QRScanner = ({ onScanSuccess, isOpen, onClose }: QRScannerProps) =>
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [codeReader, setCodeReader] = useState<BrowserQRCodeReader | null>(null);
 
   useEffect(() => {
     if (isOpen) {
-      startCamera();
+      startScanner();
     } else {
-      stopCamera();
+      stopScanner();
     }
 
-    return () => stopCamera();
+    return () => stopScanner();
   }, [isOpen]);
 
-  const startCamera = async () => {
+  const startScanner = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
-      });
+      const reader = new BrowserQRCodeReader();
+      setCodeReader(reader);
       
-      setStream(mediaStream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
+      // Get available video devices
+      const videoInputDevices = await BrowserQRCodeReader.listVideoInputDevices();
+      
+      if (videoInputDevices.length === 0) {
+        throw new Error('Nenhuma câmera encontrada');
       }
+
+      // Try to use back camera if available
+      const backCamera = videoInputDevices.find(device => 
+        device.label.toLowerCase().includes('back') || 
+        device.label.toLowerCase().includes('rear') ||
+        device.label.toLowerCase().includes('environment')
+      ) || videoInputDevices[0];
+
       setIsScanning(true);
+
+      // Start decoding from video element
+      reader.decodeFromVideoDevice(
+        backCamera.deviceId,
+        videoRef.current!,
+        (result, error) => {
+          if (result) {
+            const qrText = result.getText();
+            onScanSuccess(qrText);
+            onClose();
+            toast({
+              title: "QR Code escaneado!",
+              description: `Dados: ${qrText}`,
+            });
+            stopScanner();
+          }
+          
+          if (error && error.name !== 'NotFoundException') {
+            console.error('Erro ao escanear:', error);
+          }
+        }
+      );
+
     } catch (error) {
-      console.error('Erro ao acessar a câmera:', error);
+      console.error('Erro ao iniciar scanner:', error);
       toast({
         title: "Erro",
-        description: "Erro ao acessar a câmera",
+        description: "Erro ao acessar a câmera ou iniciar o scanner",
         variant: "destructive",
       });
+      setIsScanning(false);
     }
   };
 
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
+  const stopScanner = () => {
+    if (codeReader) {
+      // Stop the video stream manually
+      const video = videoRef.current;
+      if (video && video.srcObject) {
+        const stream = video.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+      }
+      setCodeReader(null);
     }
     setIsScanning(false);
   };
@@ -103,7 +144,7 @@ export const QRScanner = ({ onScanSuccess, isOpen, onClose }: QRScannerProps) =>
               Digitar Código
             </Button>
             <Button 
-              onClick={stopCamera} 
+              onClick={stopScanner} 
               disabled={!isScanning}
               variant="outline"
               className="flex-1"
