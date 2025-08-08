@@ -31,18 +31,39 @@ export const QRCodeDisplay = ({ qrCode, productName }: QRCodeDisplayProps) => {
     }
   };
 
-  const downloadQRCode = () => {
-    const link = document.createElement('a');
-    link.href = qrCodeImageUrl;
-    link.download = `qr-${productName.replace(/[^a-zA-Z0-9]/g, '-')}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    toast({
-      title: "Download iniciado",
-      description: "O QR code está sendo baixado",
-    });
+  const downloadQRCode = async () => {
+    try {
+      // Fetch the QR code image
+      const response = await fetch(qrCodeImageUrl);
+      const blob = await response.blob();
+      
+      // Create a temporary URL for the blob
+      const url = URL.createObjectURL(blob);
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `qr-${productName.replace(/[^a-zA-Z0-9]/g, '-')}.png`;
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up the temporary URL
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Download concluído",
+        description: "QR Code baixado com sucesso",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro no download",
+        description: "Não foi possível baixar o QR Code",
+        variant: "destructive",
+      });
+    }
   };
 
   const printQRCode = () => {
