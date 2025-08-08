@@ -46,6 +46,87 @@ export const QRCodeDisplay = ({ qrCode, productName }: QRCodeDisplayProps) => {
   };
 
   const printQRCode = () => {
+    // Create a new window with the QR code for direct printing
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>QR Code - ${productName}</title>
+          <style>
+            @media print {
+              body { margin: 0; }
+              .no-print { display: none; }
+            }
+            body {
+              font-family: Arial, sans-serif;
+              text-align: center;
+              padding: 20px;
+            }
+            .qr-container {
+              page-break-inside: avoid;
+              margin: 20px auto;
+              padding: 20px;
+              border: 2px dashed #ccc;
+              max-width: 400px;
+            }
+            .product-name {
+              font-size: 18px;
+              font-weight: bold;
+              margin-bottom: 15px;
+            }
+            .qr-code {
+              margin: 15px 0;
+            }
+            .qr-text {
+              font-size: 12px;
+              word-break: break-all;
+              margin-top: 10px;
+              font-family: monospace;
+            }
+            .print-button {
+              padding: 10px 20px;
+              background: #007acc;
+              color: white;
+              border: none;
+              border-radius: 4px;
+              cursor: pointer;
+              margin: 10px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="qr-container">
+            <div class="product-name">${productName}</div>
+            <div class="qr-code">
+              <img src="${qrCodeImageUrl}" alt="QR Code" style="width: 200px; height: 200px;" />
+            </div>
+            <div class="qr-text">${qrCode}</div>
+          </div>
+          <div class="no-print">
+            <button class="print-button" onclick="window.print()">🖨️ Imprimir QR Code</button>
+            <button class="print-button" onclick="window.close()">❌ Fechar</button>
+          </div>
+          <script>
+            // Auto print after page loads
+            setTimeout(() => {
+              window.print();
+            }, 500);
+          </script>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+    
+    toast({
+      title: "Impressão iniciada",
+      description: "Janela de impressão aberta automaticamente",
+    });
+  };
+
+  const printThermalQRCode = () => {
     // Generate TSC commands for Argox 2140 thermal printer
     const tscCommands = `SIZE 50 mm,30 mm
 GAP 2 mm,0 mm
@@ -205,7 +286,7 @@ ${tscCommands}
             </div>
             
             {/* Action Buttons */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2 mb-2">
               <Button onClick={copyToClipboard} variant="outline" size="sm">
                 <Copy className="h-4 w-4 mr-1" />
                 Copiar
@@ -214,7 +295,15 @@ ${tscCommands}
                 <Download className="h-4 w-4 mr-1" />
                 Baixar
               </Button>
-              <Button onClick={printQRCode} variant="outline" size="sm">
+            </div>
+            
+            {/* Print Buttons */}
+            <div className="grid grid-cols-2 gap-2">
+              <Button onClick={printQRCode} variant="default" size="sm">
+                <Printer className="h-4 w-4 mr-1" />
+                Imprimir
+              </Button>
+              <Button onClick={printThermalQRCode} variant="outline" size="sm">
                 <Printer className="h-4 w-4 mr-1" />
                 Argox 2140
               </Button>
