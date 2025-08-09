@@ -1,7 +1,7 @@
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, Edit, Trash2, Package } from 'lucide-react';
+import { Calendar, MapPin, Edit, Trash2, Package, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Event } from './EventForm';
@@ -11,6 +11,7 @@ interface EventCardProps {
   onEdit: (event: Event) => void;
   onDelete: (id: string) => void;
   onViewProducts: (event: Event) => void;
+  onManageBudget?: (event: Event) => void;
   productCount?: number;
 }
 
@@ -26,7 +27,7 @@ const statusLabels = {
   completed: 'Concluído',
 };
 
-export const EventCard = ({ event, onEdit, onDelete, onViewProducts, productCount = 0 }: EventCardProps) => {
+export const EventCard = ({ event, onEdit, onDelete, onViewProducts, onManageBudget, productCount = 0 }: EventCardProps) => {
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-3">
@@ -66,7 +67,7 @@ export const EventCard = ({ event, onEdit, onDelete, onViewProducts, productCoun
       </CardContent>
       
       <CardFooter className="pt-3">
-        <div className="flex gap-2 w-full">
+        <div className="flex gap-1 w-full">
           <Button
             variant="outline"
             size="sm"
@@ -74,8 +75,19 @@ export const EventCard = ({ event, onEdit, onDelete, onViewProducts, productCoun
             className="flex-1"
           >
             <Package className="h-4 w-4 mr-1" />
-            Ver Produtos
+            Produtos
           </Button>
+          {onManageBudget && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onManageBudget(event)}
+              className="flex-1"
+            >
+              <DollarSign className="h-4 w-4 mr-1" />
+              Orçamento
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"

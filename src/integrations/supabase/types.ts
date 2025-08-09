@@ -14,6 +14,68 @@ export type Database = {
   }
   public: {
     Tables: {
+      budget_items: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          event_id: string
+          id: string
+          name: string
+          quantity: number
+          status: string
+          supplier: string | null
+          total_price: number | null
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          event_id: string
+          id?: string
+          name: string
+          quantity?: number
+          status?: string
+          supplier?: string | null
+          total_price?: number | null
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          event_id?: string
+          id?: string
+          name?: string
+          quantity?: number
+          status?: string
+          supplier?: string | null
+          total_price?: number | null
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_items_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_products: {
         Row: {
           event_id: string
@@ -94,6 +156,65 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      financial_reports: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data: Json | null
+          event_id: string | null
+          id: string
+          period_end: string
+          period_start: string
+          report_type: string
+          status: string
+          title: string
+          total_budget: number | null
+          total_remaining: number | null
+          total_spent: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data?: Json | null
+          event_id?: string | null
+          id?: string
+          period_end: string
+          period_start: string
+          report_type: string
+          status?: string
+          title: string
+          total_budget?: number | null
+          total_remaining?: number | null
+          total_spent?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data?: Json | null
+          event_id?: string | null
+          id?: string
+          period_end?: string
+          period_start?: string
+          report_type?: string
+          status?: string
+          title?: string
+          total_budget?: number | null
+          total_remaining?: number | null
+          total_spent?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_reports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {

@@ -15,6 +15,8 @@ import { SendMaterialScanner } from '@/components/SendMaterialScanner';
 import { EventProducts } from '@/components/EventProducts';
 import ReturnMaterial from '@/components/ReturnMaterial';
 import UserApproval from '@/components/UserApproval';
+import { FinancialModule } from '@/components/FinancialModule';
+import { BudgetManager } from '@/components/BudgetManager';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -40,6 +42,7 @@ const Index = () => {
   const [scannedQRData, setScannedQRData] = useState<string>('');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isEventProductsOpen, setIsEventProductsOpen] = useState(false);
+  const [isBudgetOpen, setIsBudgetOpen] = useState(false);
   const [eventProductCounts, setEventProductCounts] = useState<Record<string, number>>({});
 
   // Load data from Supabase on component mount
@@ -426,6 +429,11 @@ const Index = () => {
     setIsEventFormOpen(true);
   };
 
+  const handleManageBudget = (event: Event) => {
+    setSelectedEvent(event);
+    setIsBudgetOpen(true);
+  };
+
   // Filter products based on search and category
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) || product.description?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -570,7 +578,7 @@ const Index = () => {
                   Criar Primeiro Evento
                 </Button>
               </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {events.map(event => <EventCard key={event.id} event={event} onEdit={handleEditEvent} onDelete={handleDeleteEvent} onViewProducts={handleViewEventProducts} productCount={eventProductCounts[event.id] || 0} />)}
+                {events.map(event => <EventCard key={event.id} event={event} onEdit={handleEditEvent} onDelete={handleDeleteEvent} onViewProducts={handleViewEventProducts} onManageBudget={(isAdmin || isFinancialAdmin) ? handleManageBudget : undefined} productCount={eventProductCounts[event.id] || 0} />)}
               </div>}
           </TabsContent>
 
@@ -581,13 +589,7 @@ const Index = () => {
 
           {/* Financeiro Tab - Only for admins and financial admins */}
           {(isAdmin || isFinancialAdmin) && <TabsContent value="financeiro" className="space-y-6">
-              <div className="text-center py-12">
-                <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Módulo de Orçamentos</h3>
-                <p className="text-muted-foreground">
-                  Funcionalidades financeiras serão implementadas em breve
-                </p>
-              </div>
+              <FinancialModule />
             </TabsContent>}
         </Tabs>
 
@@ -599,6 +601,17 @@ const Index = () => {
         <EventProducts event={selectedEvent} isOpen={isEventProductsOpen} onClose={() => setIsEventProductsOpen(false)} />
 
         <QRScanner isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} onScanSuccess={handleQRScan} />
+
+        {selectedEvent && (
+          <BudgetManager
+            event={selectedEvent}
+            isOpen={isBudgetOpen}
+            onClose={() => {
+              setIsBudgetOpen(false);
+              setSelectedEvent(null);
+            }}
+          />
+        )}
       </div>
     </div>;
 };
