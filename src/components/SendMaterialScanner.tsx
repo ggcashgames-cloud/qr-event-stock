@@ -89,11 +89,14 @@ export const SendMaterialScanner = ({ products, events, onSendToEvent }: SendMat
 
       {/* Event Selection Dialog */}
       <Dialog open={isSelectionOpen} onOpenChange={handleCloseSelection}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px]" aria-describedby="dialog-description">
           <DialogHeader>
             <DialogTitle>Enviar Material para Evento</DialogTitle>
           </DialogHeader>
           
+          <div id="dialog-description" className="sr-only">
+            Selecione um evento e quantidade para enviar o material escaneado
+          </div>
           {scannedProduct && (
             <div className="space-y-4">
               <div className="p-4 bg-muted rounded-lg">
