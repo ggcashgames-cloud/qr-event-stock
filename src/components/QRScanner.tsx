@@ -16,9 +16,11 @@ export const QRScanner = ({ onScanSuccess, isOpen, onClose }: QRScannerProps) =>
   const [isScanning, setIsScanning] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [codeReader, setCodeReader] = useState<BrowserQRCodeReader | null>(null);
+  const [hasScanned, setHasScanned] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
+      setHasScanned(false);
       startScanner();
     } else {
       stopScanner();
@@ -53,15 +55,16 @@ export const QRScanner = ({ onScanSuccess, isOpen, onClose }: QRScannerProps) =>
         backCamera.deviceId,
         videoRef.current!,
         (result, error) => {
-          if (result) {
+          if (result && !hasScanned) {
             const qrText = result.getText();
+            setHasScanned(true);
             onScanSuccess(qrText);
-            onClose();
             toast({
               title: "QR Code escaneado!",
               description: `Dados: ${qrText}`,
             });
             stopScanner();
+            onClose();
           }
           
           if (error && error.name !== 'NotFoundException') {
