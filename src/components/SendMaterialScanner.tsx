@@ -41,14 +41,11 @@ export const SendMaterialScanner = ({ products, events, onSendToEvent }: SendMat
     if (scannedProduct && selectedEventId && quantity > 0) {
       try {
         await onSendToEvent(scannedProduct.id, selectedEventId, quantity);
-        // Only close dialog and reset state after successful operation
-        setIsSelectionOpen(false);
-        setScannedProduct(null);
-        setSelectedEventId('');
-        setQuantity(1);
+        // Force close dialog after successful operation
+        handleCloseSelection();
       } catch (error) {
         console.error('Error sending material to event:', error);
-        // Keep dialog open on error
+        // Keep dialog open on error - no state reset
       }
     }
   };

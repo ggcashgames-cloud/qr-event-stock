@@ -367,7 +367,7 @@ const Index = () => {
           description: "Não há quantidade suficiente do produto no estoque",
           variant: "destructive"
         });
-        return;
+        throw new Error('Insufficient stock');
       }
 
       // Insert into event_products or update if exists
@@ -388,7 +388,7 @@ const Index = () => {
           description: "Não foi possível enviar o produto para o evento",
           variant: "destructive"
         });
-        return;
+        throw new Error('Event product error');
       }
 
       // Update product quantity
@@ -404,7 +404,7 @@ const Index = () => {
           description: "Não foi possível atualizar o estoque do produto",
           variant: "destructive"
         });
-        return;
+        throw new Error('Product update error');
       }
       toast({
         title: "Material enviado",
